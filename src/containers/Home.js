@@ -46,7 +46,6 @@ export default function Home(props) {
             <LinkContainer key={note.noteId} to={`/notes/${note.noteId}`}>
             <ListGroupItem header={note.content.trim().split("\n")[0]}>
               {"Created: " + new Date(note.createdAt).toLocaleString()}
-              <span class="badge badge-primary badge-pill">14</span>
             </ListGroupItem>
             </LinkContainer>
         )}
