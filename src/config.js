@@ -2,17 +2,17 @@ export default {
   MAX_ATTACHMENT_SIZE: 5000000,
   s3: {
     REGION: "us-east-1",
-    BUCKET: "notes-app-2-api-dev-attachmentsbucket-way5a22bh784"
+    BUCKET: "sle-notes-api-dev-attachmentsbucket-c5nvt63nllor"
   },
   apiGateway: {
     REGION: "us-east-1",
-    URL: "https://9e46pt5kuj.execute-api.us-east-1.amazonaws.com/dev",
-    WSS_URL: "wss://eyikwn42j7.execute-api.us-east-1.amazonaws.com/dev"
+    URL: "https://bevfdlia18.execute-api.us-east-1.amazonaws.com/dev",
+    WSS_URL: "wss://wfc2j7xjm6.execute-api.us-east-1.amazonaws.com/dev"
   },
   cognito: {
     REGION: "us-east-1",
-    USER_POOL_ID: "us-east-1_325xk7QE5",
-    APP_CLIENT_ID: "7bv3ainjdjudnq6gji9i1ttkfh",
-    IDENTITY_POOL_ID: "us-east-1:58bb55df-3c51-4757-84c5-992f0c18e481"
+    USER_POOL_ID: "us-east-1_owgI6RY6Y",
+    APP_CLIENT_ID: "4ham9v2s8c0d9v9mdm7vk3fggp",
+    IDENTITY_POOL_ID: "us-east-1:aa989ba7-1b37-4d5a-95f5-14b70c2694d2"
   }
 };
