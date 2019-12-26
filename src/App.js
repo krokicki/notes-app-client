@@ -5,6 +5,10 @@ import { LinkContainer } from "react-router-bootstrap";
 import Routes from "./Routes";
 import { Auth } from "aws-amplify";
 import "./App.css";
+import Sockette from "sockette";
+import config from './config';
+
+let ws = null;
 
 function App(props) {
   const [isAuthenticated, userHasAuthenticated] = useState(false);
@@ -13,10 +17,11 @@ function App(props) {
   useEffect(() => {
     onLoad();
   }, []);
-  
+
   async function onLoad() {
     try {
-      await Auth.currentSession();
+      const session = await Auth.currentSession();
+      await connectWebSocket(session);
       userHasAuthenticated(true);
     }
     catch(e) {
@@ -24,8 +29,43 @@ function App(props) {
         alert(e);
       }
     }
-  
+
     setIsAuthenticating(false);
+  }
+
+  const processMessage = ({data}) => {
+    console.log("Message Received:", data)
+    const { eventType, noteId } = JSON.parse(data);
+    console.log("  eventType:", eventType)
+    console.log("  noteId:", noteId)
+  }
+
+  async function connectWebSocket(session) {
+
+    let jwt = session.accessToken.jwtToken;
+
+    //Init WebSockets with Cognito Access Token
+    ws = new Sockette(
+      config.apiGateway.WSS_URL+"?token="+jwt,
+      {
+        timeout: 5e3,
+        maxAttempts: 1,
+        onopen: e => console.log("Connected to WebSocket"),
+        onmessage: e => processMessage(e),
+        onreconnect: e => console.log("Reconnecting to WebSocket..."),
+        onmaximum: e => console.log("Stop Attempting WebSocket connection."),
+        onclose: e => console.log("Closed WebSocket"),
+        onerror: e => console.log("Error from WebSocket:", e)
+      }
+    );
+
+    console.log(ws);
+
+    // ws.json({
+    //   action: "sendMessage",
+    //   data: "Hello World"
+    // });
+
   }
 
   async function handleLogout() {

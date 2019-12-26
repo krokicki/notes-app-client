@@ -29,7 +29,8 @@ export default function Notes(props) {
 
         setContent(content);
         setNote(note);
-      } catch (e) {
+      }
+      catch (e) {
         alert(e);
       }
     }
@@ -40,11 +41,11 @@ export default function Notes(props) {
   function validateForm() {
     return content.length > 0;
   }
-  
+
   function formatFilename(str) {
     return str.replace(/^\w+-/, "");
   }
-  
+
   function handleFileChange(event) {
     file.current = event.target.files[0];
   }
@@ -53,12 +54,12 @@ export default function Notes(props) {
       body: note
     });
   }
-  
+
   async function handleSubmit(event) {
     let attachment;
-  
+
     event.preventDefault();
-  
+
     if (file.current && file.current.size > config.MAX_ATTACHMENT_SIZE) {
       alert(
         `Please pick a file smaller than ${config.MAX_ATTACHMENT_SIZE /
@@ -66,9 +67,9 @@ export default function Notes(props) {
       );
       return;
     }
-  
+
     setIsLoading(true);
-  
+
     try {
       if (file.current) {
         attachment = await s3Upload(file.current);
@@ -84,24 +85,24 @@ export default function Notes(props) {
       setIsLoading(false);
     }
   }
-  
+
   function deleteNote() {
     return API.del("notes", `/notes/${props.match.params.id}`);
   }
-  
+
   async function handleDelete(event) {
     event.preventDefault();
-  
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this note?"
     );
-  
+
     if (!confirmed) {
       return;
     }
-  
+
     setIsDeleting(true);
-  
+
     try {
       await deleteNote();
       props.history.push("/");
