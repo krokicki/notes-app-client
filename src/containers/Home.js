@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { PageHeader, ListGroup, ListGroupItem } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import "./Home.css";
-import { API } from "aws-amplify";
 
 export default function Home(props) {
-  const [notes, setNotes] = useState([]);
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -13,24 +12,13 @@ export default function Home(props) {
       if (!props.isAuthenticated) {
         return;
       }
-  
-      try {
-        const notes = await loadNotes();
-        setNotes(notes);
-      } 
-      catch (e) {
-        alert(e);
-      }
-  
+
       setIsLoading(false);
     }
-  
+
     onLoad();
   }, [props.isAuthenticated]);
-  
-  function loadNotes() {
-    return API.get("notes", "/notes");
-  }
+
 
   function renderNotesList(notes) {
     return (
@@ -67,7 +55,7 @@ export default function Home(props) {
       <div className="notes">
         <PageHeader>Your Notes</PageHeader>
         <ListGroup>
-          {!isLoading && renderNotesList(notes)}
+          {!isLoading && renderNotesList(props.notes)}
         </ListGroup>
       </div>
     );

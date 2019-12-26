@@ -3,7 +3,7 @@ import { Link, withRouter } from "react-router-dom";
 import { Nav, Navbar, NavItem } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import Routes from "./Routes";
-import { Auth } from "aws-amplify";
+import { Auth, API } from "aws-amplify";
 import Sockette from "sockette";
 import config from './config';
 import "./App.css";
@@ -13,6 +13,8 @@ import "./App.css";
 function App(props) {
   const [isAuthenticated, userHasAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const [notes, setNotes] = useState([]);
+  const [username, setUsername] = useState([]);
   let ws = null;
 
   useEffect(() => {
@@ -22,10 +24,10 @@ function App(props) {
   async function onLoad() {
     try {
       const session = await Auth.currentSession();
-      console.log("Got session");
       ws = await connectWebSocket(session);
 
       userHasAuthenticated(true);
+      setUsername(session.getIdToken().payload['email']);
       console.log("User successfully authenticated");
     }
     catch(e) {
@@ -35,8 +37,10 @@ function App(props) {
       }
     }
 
-    console.log("Loading done");
     setIsAuthenticating(false);
+
+    // Initial load
+    reloadNotes();
 
     return () => {
       console.log("Cleaning WebSocket");
@@ -45,11 +49,23 @@ function App(props) {
     };
   }
 
-  const processMessage = ({data}) => {
-    const { eventType, noteId } = JSON.parse(data);
-    console.log(eventType+" "+noteId);
-    //this.forceUpdate();
+  const processMessage = async ({data}) => {
+    // TODO: for better efficiency and scaling, the events should
+    // include the entire note, and this method would just update
+    // the notes state with it, without any extra queries.
+    //const { eventType, noteId } = JSON.parse(data);
+    // For demo purposes, just reload the notes each time:
+    reloadNotes();
   };
+
+  async function reloadNotes() {
+    try {
+      setNotes(await loadNotes());
+    }
+    catch (e) {
+      alert(e);
+    }
+  }
 
   async function connectWebSocket(session) {
 
@@ -77,6 +93,10 @@ function App(props) {
     props.history.push("/login");
   }
 
+  function loadNotes() {
+    return API.get("notes", "/notes");
+  }
+
   return (
     !isAuthenticating &&
     <div className="App container">
@@ -90,7 +110,10 @@ function App(props) {
         <Navbar.Collapse>
           <Nav pullRight>
             {isAuthenticated
-              ? <NavItem onClick={handleLogout}>Logout</NavItem>
+              ? <>
+                  <p class="navbar-text">Logged in as {username}</p>
+                  <NavItem onClick={handleLogout}>Logout</NavItem>
+                </>
               : <>
                   <LinkContainer to="/signup">
                     <NavItem>Signup</NavItem>
@@ -103,7 +126,7 @@ function App(props) {
           </Nav>
         </Navbar.Collapse>
       </Navbar>
-      <Routes appProps={{ isAuthenticated, userHasAuthenticated }} />
+      <Routes appProps={{ isAuthenticated, userHasAuthenticated, notes }} />
     </div>
   );
 }
