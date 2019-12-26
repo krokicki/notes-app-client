@@ -4,15 +4,16 @@ import { Nav, Navbar, NavItem } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import Routes from "./Routes";
 import { Auth } from "aws-amplify";
-import "./App.css";
 import Sockette from "sockette";
 import config from './config';
+import "./App.css";
 
-let ws = null;
+//window.LOG_LEVEL='DEBUG';
 
 function App(props) {
   const [isAuthenticated, userHasAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
+  let ws = null;
 
   useEffect(() => {
     onLoad();
@@ -21,31 +22,41 @@ function App(props) {
   async function onLoad() {
     try {
       const session = await Auth.currentSession();
-      await connectWebSocket(session);
+      console.log("Got session");
+      ws = await connectWebSocket(session);
+
       userHasAuthenticated(true);
+      console.log("User successfully authenticated");
     }
     catch(e) {
       if (e !== 'No current user') {
-        alert(e);
+        console.log("Loading error:", e);
+        alert("Error logging in");
       }
     }
 
+    console.log("Loading done");
     setIsAuthenticating(false);
+
+    return () => {
+      console.log("Cleaning WebSocket");
+      ws && ws.close();
+      ws = null;
+    };
   }
 
   const processMessage = ({data}) => {
-    console.log("Message Received:", data)
     const { eventType, noteId } = JSON.parse(data);
-    console.log("  eventType:", eventType)
-    console.log("  noteId:", noteId)
-  }
+    console.log(eventType+" "+noteId);
+    //this.forceUpdate();
+  };
 
   async function connectWebSocket(session) {
 
     let jwt = session.accessToken.jwtToken;
 
     //Init WebSockets with Cognito Access Token
-    ws = new Sockette(
+    return new Sockette(
       config.apiGateway.WSS_URL+"?token="+jwt,
       {
         timeout: 5e3,
@@ -58,14 +69,6 @@ function App(props) {
         onerror: e => console.log("Error from WebSocket:", e)
       }
     );
-
-    console.log(ws);
-
-    // ws.json({
-    //   action: "sendMessage",
-    //   data: "Hello World"
-    // });
-
   }
 
   async function handleLogout() {
