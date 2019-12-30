@@ -6,6 +6,8 @@ import * as serviceWorker from './serviceWorker';
 import { BrowserRouter as Router } from 'react-router-dom';
 import Amplify from 'aws-amplify';
 import config from './config';
+import { transitions, positions, Provider as AlertProvider } from 'react-alert';
+import AlertTemplate from 'react-alert-template-basic';
 
 Amplify.configure({
   Auth: {
@@ -31,9 +33,20 @@ Amplify.configure({
   }
 });
 
+const alertOptions = {
+  // you can also just use 'bottom center'
+  position: positions.BOTTOM_CENTER,
+  timeout: 3000,
+  offset: '20px',
+  // you can also just use 'scale'
+  transition: transitions.FADE
+};
+
 ReactDOM.render(
   <Router>
-    <App />
+    <AlertProvider template={AlertTemplate} {...alertOptions}>
+      <App />
+    </AlertProvider>
   </Router>,
   document.getElementById('root')
 );

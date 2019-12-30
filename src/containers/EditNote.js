@@ -9,9 +9,10 @@ import SpinnerIcon from "../components/SpinnerIcon";
 import Grid from 'react-bootstrap/lib/Grid';
 import Col from 'react-bootstrap/lib/Col';
 import Row from 'react-bootstrap/lib/Row';
-
+import { useAlert } from 'react-alert';
 
 export default function Notes(props) {
+  const alert = useAlert();
   const file = useRef(null);
   const [note, setNote] = useState(null);
   const [content, setContent] = useState("");
@@ -19,6 +20,7 @@ export default function Notes(props) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+
     function loadNote() {
       return API.get("notes", `/notes/${props.match.params.id}`);
     }
@@ -37,12 +39,13 @@ export default function Notes(props) {
         setIsLoading(false);
       }
       catch (e) {
-        alert(e);
+        console.log(e);
+        alert.error('Error loading note');
       }
     }
 
     onLoad();
-  }, [props.match.params.id]);
+  }, [props.match.params.id, alert]);
 
   function validateForm() {
     return content.length > 0;
@@ -63,7 +66,7 @@ export default function Notes(props) {
   }
 
   async function handleSubmit(event) {
-    let attachment;
+
 
     event.preventDefault();
 
@@ -75,20 +78,27 @@ export default function Notes(props) {
       return;
     }
 
-    setIsLoading(true);
-
     try {
+      setIsLoading(true);
+
+      let attachment;
       if (file.current) {
         attachment = await s3Upload(file.current);
       }
+
       await saveNote({
         content,
         attachment: attachment || note.attachment
       });
+
+      alert.success('Note saved');
+
       // TODO: delete old file
       props.history.push("/");
-    } catch (e) {
-      alert(e);
+    }
+    catch (e) {
+      console.log(e);
+      alert.error('Error saving note');
       setIsLoading(false);
     }
   }
