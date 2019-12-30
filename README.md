@@ -17,3 +17,8 @@ Create optimized build for deployment:
 npm run build
 ```
 
+Deployment to production with Serverless:
+```
+sls client deploy
+```
+
