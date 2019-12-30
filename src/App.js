@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, withRouter } from "react-router-dom";
 import { Nav, Navbar, NavItem } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
@@ -11,43 +11,79 @@ import "./App.css";
 //window.LOG_LEVEL='DEBUG';
 
 function App(props) {
-  const [isAuthenticated, userHasAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, userHasAuthenticated] = useState(false);
   const [notes, setNotes] = useState([]);
   const [username, setUsername] = useState([]);
-  let ws = null;
+  const socket = useRef(null);
 
+  // Execute this once after the page is loaded
+  // to get the username and establish a web socket
   useEffect(() => {
+
+    async function connectWebSocket(session) {
+      return new Sockette(
+        config.apiGateway.WSS_URL+"?token="+session.accessToken.jwtToken,
+        {
+          timeout: 5000,
+          maxAttempts: 3,
+          onopen: e => console.log("Connected to WebSocket"),
+          onmessage: e => processMessage(e),
+          onreconnect: e => console.log("Reconnecting to WebSocket..."),
+          onmaximum: e => console.log("Stop Attempting WebSocket connection."),
+          onclose: e => console.log("Closed WebSocket"),
+          onerror: e => console.log("Error from WebSocket:", e)
+        }
+      );
+    }
+
+    async function onLoad() {
+      try {
+        const session = await Auth.currentSession();
+        setUsername(session.getIdToken().payload['email']);
+        userHasAuthenticated(true);
+        console.log("User successfully authenticated");
+        socket.current = await connectWebSocket(session);
+      }
+      catch(e) {
+        if (e !== 'No current user') {
+          console.log("Loading error:", e);
+          alert("Error logging in");
+        }
+      }
+
+      setIsAuthenticating(false);
+
+      return () => {
+        console.log("Cleaning WebSocket");
+        socket.current && socket.current.close();
+        socket.current = null;
+      };
+    }
+
     onLoad();
   }, []);
 
-  async function onLoad() {
-    try {
-      const session = await Auth.currentSession();
-      ws = await connectWebSocket(session);
+  useEffect(() => {
 
-      userHasAuthenticated(true);
-      setUsername(session.getIdToken().payload['email']);
-      console.log("User successfully authenticated");
-    }
-    catch(e) {
-      if (e !== 'No current user') {
-        console.log("Loading error:", e);
-        alert("Error logging in");
+    if (!isAuthenticated) return;
+
+    // Cancel pattern from https://github.com/facebook/react/issues/14326
+    let didCancel = false;
+
+    async function fetchNotes() {
+      const response = await API.get("notes", "/notes");
+      if (!didCancel) { // Ignore if we started fetching something else
+        setNotes(response);
+        setIsLoading(false);
       }
     }
 
-    setIsAuthenticating(false);
+    fetchNotes();
+    return () => { didCancel = true; }; // Remember if we start fetching something else
+  }, [isAuthenticated]);
 
-    // Initial load
-    reloadNotes();
-
-    return () => {
-      console.log("Cleaning WebSocket");
-      ws && ws.close();
-      ws = null;
-    };
-  }
 
   const processMessage = async ({data}) => {
     // TODO: for better efficiency and scaling, the events should
@@ -55,46 +91,18 @@ function App(props) {
     // the notes state with it, without any extra queries.
     //const { eventType, noteId } = JSON.parse(data);
     // For demo purposes, just reload the notes each time:
-    reloadNotes();
-  };
-
-  async function reloadNotes() {
     try {
-      setNotes(await loadNotes());
+      setNotes(await API.get("notes", "/notes"));
     }
     catch (e) {
       alert(e);
     }
-  }
-
-  async function connectWebSocket(session) {
-
-    let jwt = session.accessToken.jwtToken;
-
-    //Init WebSockets with Cognito Access Token
-    return new Sockette(
-      config.apiGateway.WSS_URL+"?token="+jwt,
-      {
-        timeout: 5e3,
-        maxAttempts: 1,
-        onopen: e => console.log("Connected to WebSocket"),
-        onmessage: e => processMessage(e),
-        onreconnect: e => console.log("Reconnecting to WebSocket..."),
-        onmaximum: e => console.log("Stop Attempting WebSocket connection."),
-        onclose: e => console.log("Closed WebSocket"),
-        onerror: e => console.log("Error from WebSocket:", e)
-      }
-    );
-  }
+  };
 
   async function handleLogout() {
     await Auth.signOut();
     userHasAuthenticated(false);
     props.history.push("/login");
-  }
-
-  function loadNotes() {
-    return API.get("notes", "/notes");
   }
 
   return (
@@ -111,7 +119,7 @@ function App(props) {
           <Nav pullRight>
             {isAuthenticated
               ? <>
-                  <p class="navbar-text">Logged in as {username}</p>
+                  <p className="navbar-text">Logged in as {username}</p>
                   <NavItem onClick={handleLogout}>Logout</NavItem>
                 </>
               : <>
@@ -126,7 +134,7 @@ function App(props) {
           </Nav>
         </Navbar.Collapse>
       </Navbar>
-      <Routes appProps={{ isAuthenticated, userHasAuthenticated, notes }} />
+      <Routes appProps={{ isLoading, isAuthenticated, userHasAuthenticated, notes }} />
     </div>
   );
 }

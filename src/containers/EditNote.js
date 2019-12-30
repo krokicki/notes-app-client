@@ -4,13 +4,18 @@ import { FormGroup, FormControl, ControlLabel } from "react-bootstrap";
 import LoaderButton from "../components/LoaderButton";
 import config from "../config";
 import { s3Upload } from "../libs/awsLib";
-import "./Notes.css";
+import "./EditNote.css";
+import SpinnerIcon from "../components/SpinnerIcon";
+import Grid from 'react-bootstrap/lib/Grid';
+import Col from 'react-bootstrap/lib/Col';
+import Row from 'react-bootstrap/lib/Row';
+
 
 export default function Notes(props) {
   const file = useRef(null);
   const [note, setNote] = useState(null);
   const [content, setContent] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -29,6 +34,7 @@ export default function Notes(props) {
 
         setContent(content);
         setNote(note);
+        setIsLoading(false);
       }
       catch (e) {
         alert(e);
@@ -49,6 +55,7 @@ export default function Notes(props) {
   function handleFileChange(event) {
     file.current = event.target.files[0];
   }
+
   function saveNote(note) {
     return API.put("notes", `/notes/${props.match.params.id}`, {
       body: note
@@ -114,6 +121,15 @@ export default function Notes(props) {
 
   return (
     <div className="Notes">
+      {!note && (
+        <Grid>
+        <Row>
+          <Col className="col-centered">
+            <SpinnerIcon/>
+          </Col>
+        </Row>
+        </Grid>
+      )}
       {note && (
         <form onSubmit={handleSubmit}>
           <FormGroup controlId="content">

@@ -6,3 +6,9 @@
   height: 300px;
   font-size: 24px;
 }
+
+.col-centered {
+  float: none;
+  margin: 0 auto;
+  text-align: center;
+}

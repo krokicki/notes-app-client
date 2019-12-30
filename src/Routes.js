@@ -8,7 +8,7 @@ import NotFound from "./containers/NotFound";
 import Login from "./containers/Login";
 import Signup from "./containers/Signup";
 import NewNote from "./containers/NewNote";
-import Notes from "./containers/Notes";
+import EditNote from "./containers/EditNote";
 
 export default function Routes({ appProps }) {
   return (
@@ -17,7 +17,7 @@ export default function Routes({ appProps }) {
       <UnauthenticatedRoute path="/login" exact component={Login} appProps={appProps} />
       <UnauthenticatedRoute path="/signup" exact component={Signup} appProps={appProps} />
       <AuthenticatedRoute path="/notes/new" exact component={NewNote} appProps={appProps} />
-      <AuthenticatedRoute path="/notes/:id" exact component={Notes} appProps={appProps} />
+      <AuthenticatedRoute path="/notes/:id" exact component={EditNote} appProps={appProps} />
       { /* Finally, catch all unmatched routes */ }
       <Route component={NotFound} />
     </Switch>
