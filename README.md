@@ -1,6 +1,8 @@
 # Notes Example
 
-Based on https://serverless-stack.com
+Collaborative note-taking app.
+
+Based on the tutorial at https://serverless-stack.com
 
 Build:
 ```
